@@ -1,0 +1,69 @@
+import os
+from flask import Flask, render_template, request
+from openai import OpenAI
+from agent.supabase_client import supabase
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
+
+app = Flask(__name__)
+
+
+def buscar_historico():
+    resposta = supabase.table("tickets").select("*").order("id", desc=False).limit(20).execute()
+    return resposta.data
+
+
+def responder_chat(mensagem):
+    historico = buscar_historico()
+
+    mensagens = [
+        {
+            "role": "system",
+            "content": "Voce e um agente inteligente de atendimento. Responda de forma clara e use o historico quando fizer sentido."
+        }
+    ]
+
+    for item in historico:
+        mensagens.append({"role": "user", "content": item["ticket"]})
+        mensagens.append({"role": "assistant", "content": item["categoria"]})
+
+    mensagens.append({"role": "user", "content": mensagem})
+
+    resposta = client.chat.completions.create(
+        model="openrouter/free",
+        messages=mensagens
+    )
+
+    return resposta.choices[0].message.content.strip()
+
+
+def salvar_mensagem(usuario, resposta):
+    supabase.table("tickets").insert({
+        "ticket": usuario,
+        "categoria": resposta
+    }).execute()
+
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    resposta_agente = None
+
+    if request.method == "POST":
+        mensagem = request.form["mensagem"]
+        resposta_agente = responder_chat(mensagem)
+        salvar_mensagem(mensagem, resposta_agente)
+
+    historico = buscar_historico()
+
+    return render_template(
+        "index.html",
+        resposta_agente=resposta_agente,
+        historico=historico
+    )
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
