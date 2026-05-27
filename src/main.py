@@ -1,8 +1,10 @@
 import os
+import uuid
 
 from flask import Flask
 from flask import render_template
 from flask import request
+from flask import session
 
 from openai import OpenAI
 
@@ -17,13 +19,25 @@ client = OpenAI(
 
 app = Flask(__name__)
 
+app.secret_key = "agent-secret-key"
 
-def buscar_historico(limite=10):
+
+def obter_usuario():
+
+    if "user_id" not in session:
+
+        session["user_id"] = str(uuid.uuid4())
+
+    return session["user_id"]
+
+
+def buscar_historico(user_id, limite=20):
 
     resposta = (
         supabase
         .table("tickets")
         .select("*")
+        .eq("user_id", user_id)
         .order("id", desc=False)
         .limit(limite)
         .execute()
@@ -32,9 +46,7 @@ def buscar_historico(limite=10):
     return resposta.data
 
 
-def responder_chat(mensagem):
-
-    historico = buscar_historico()
+def responder_chat(mensagem, historico):
 
     mensagens = [
 
@@ -82,9 +94,11 @@ def responder_chat(mensagem):
     return resposta.choices[0].message.content.strip()
 
 
-def salvar_mensagem(usuario, resposta):
+def salvar_mensagem(user_id, usuario, resposta):
 
     supabase.table("tickets").insert({
+
+        "user_id": user_id,
 
         "ticket": usuario,
 
@@ -98,15 +112,26 @@ def home():
 
     resposta_agente = None
 
+    user_id = obter_usuario()
+
+    historico = buscar_historico(user_id)
+
     if request.method == "POST":
 
         mensagem = request.form["mensagem"]
 
-        resposta_agente = responder_chat(mensagem)
+        resposta_agente = responder_chat(
+            mensagem,
+            historico
+        )
 
-        salvar_mensagem(mensagem, resposta_agente)
+        salvar_mensagem(
+            user_id,
+            mensagem,
+            resposta_agente
+        )
 
-    historico = buscar_historico()
+        historico = buscar_historico(user_id)
 
     return render_template(
 
