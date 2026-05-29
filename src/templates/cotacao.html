@@ -1,293 +1,246 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-<meta charset="UTF-8">
-
-<title>ByteMaster AI</title>
-
-<style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-
-    font-family:Arial, Helvetica, sans-serif;
-
-    background:
-    linear-gradient(
-        rgba(0,0,0,0.75),
-        rgba(0,0,0,0.75)
-    ),
-    url("/static/background.jpg");
-
-    background-size:cover;
-    background-position:center;
-    background-repeat:no-repeat;
-    background-attachment:fixed;
-
-    min-height:100vh;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    color:white;
-}
-
-.card{
-
-    width:700px;
-    max-width:95%;
-
-    background:rgba(0,0,0,0.55);
-
-    backdrop-filter:blur(10px);
-
-    border:1px solid rgba(255,255,255,0.15);
-
-    border-radius:25px;
-
-    padding:40px;
-
-    text-align:center;
-
-    box-shadow:
-    0 0 30px rgba(0,0,0,0.4);
-}
-
-.logo{
-
-    width:180px;
-
-    margin-bottom:20px;
-}
-
-h1{
-
-    font-size:42px;
-
-    color:#ffffff;
-
-    margin-bottom:10px;
-}
-
-.subtitulo{
-
-    color:#d1d5db;
-
-    font-size:18px;
-
-    margin-bottom:30px;
-}
-
-input[type=file]{
-
-    width:100%;
-
-    padding:15px;
-
-    border-radius:12px;
-
-    border:none;
-
-    background:#111827;
-
-    color:white;
-
-    margin-bottom:20px;
-}
-
-.botao{
-
-    background:#38bdf8;
-
-    color:#00111f;
-
-    border:none;
-
-    border-radius:12px;
-
-    padding:15px 30px;
-
-    font-size:18px;
-
-    font-weight:bold;
-
-    cursor:pointer;
-
-    transition:0.3s;
-}
-
-.botao:hover{
-
-    background:#0ea5e9;
-}
-
-.download{
-
-    margin-top:25px;
-}
-
-.download a{
-
-    color:#4ade80;
-
-    font-weight:bold;
-
-    font-size:18px;
-
-    text-decoration:none;
-}
-
-.erro{
-
-    margin-top:25px;
-
-    color:#ff9b9b;
-}
-
-.voltar{
-
-    display:inline-block;
-
-    margin-top:25px;
-
-    color:#38bdf8;
-
-    text-decoration:none;
-}
-
-footer{
-
-    margin-top:35px;
-
-    color:#cbd5e1;
-
-    font-size:14px;
-}
-
-details{
-
-    margin-top:25px;
-
-    text-align:left;
-}
-
-.ocr{
-
-    margin-top:15px;
-
-    background:#0f172a;
-
-    border-radius:10px;
-
-    padding:15px;
-
-    max-height:300px;
-
-    overflow:auto;
-
-    white-space:pre-wrap;
-
-    font-size:12px;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <title>ByteMaster AI - Cotacao</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.78)),
+                url("/static/background.jpg");
+            background-size: cover;
+            background-position: center;
+            color: white;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: rgba(2, 6, 23, 0.92);
+            padding: 20px;
+        }
+
+        .logo {
+            color: #38bdf8;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        .menu-item {
+            display: block;
+            background: #111827;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .menu-item:hover {
+            background: #1e293b;
+        }
+
+        .active {
+            background: #2563eb;
+        }
+
+        .usuario {
+            margin-top: 40px;
+            font-size: 15px;
+        }
+
+        .sair {
+            display: block;
+            margin-top: 15px;
+            color: #38bdf8;
+            text-decoration: none;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+
+        .card {
+            width: 650px;
+            max-width: 95%;
+            background: rgba(0,0,0,0.58);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0,0,0,0.4);
+        }
+
+        .card-logo {
+            width: 160px;
+            margin-bottom: 20px;
+            border-radius: 18px;
+        }
+
+        h1 {
+            font-size: 38px;
+            margin-bottom: 8px;
+        }
+
+        .subtitulo {
+            color: #d1d5db;
+            font-size: 17px;
+            margin-bottom: 28px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: #111827;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #38bdf8;
+            color: #00111f;
+            border: none;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0ea5e9;
+        }
+
+        .download {
+            margin-top: 25px;
+        }
+
+        .download a {
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 18px;
+            text-decoration: none;
+        }
+
+        .erro {
+            margin-top: 25px;
+            color: #ff9b9b;
+        }
+
+        details {
+            margin-top: 25px;
+            text-align: left;
+        }
+
+        .ocr {
+            margin-top: 15px;
+            background: #0f172a;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 250px;
+            overflow: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+
+        footer {
+            margin-top: 30px;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="card">
+    <div class="sidebar">
 
-    <img
-        src="/static/background.jpg"
-        class="logo"
-    >
+        <div class="logo">ByteMaster AI</div>
 
-    <h1>ByteMaster AI</h1>
+        <a href="/" class="menu-item">Chat</a>
+        <a href="/cotacao" class="menu-item active">Cotacao</a>
+        <a href="/" class="menu-item">Historico</a>
+        <a href="/" class="menu-item">Memoria</a>
+        <a href="/" class="menu-item">Configuracoes</a>
 
-    <div class="subtitulo">
-        Leitor Inteligente de Cotacoes
-    </div>
+        <div class="usuario">
+            Usuario: {{ nome }}
+        </div>
 
-    <form
-        method="POST"
-        enctype="multipart/form-data"
-    >
-
-        <input
-            type="file"
-            name="imagem"
-            accept="image/*,.pdf"
-            required
-        >
-
-        <button
-            type="submit"
-            class="botao"
-        >
-            Processar Cotacao
-        </button>
-
-    </form>
-
-    {% if arquivo %}
-
-    <div class="download">
-
-        <a href="/download/{{arquivo}}">
-            Baixar Planilha Gerada
-        </a>
+        <a href="/logout" class="sair">Sair</a>
 
     </div>
 
-    {% endif %}
+    <div class="main">
 
-    {% if erro %}
+        <div class="card">
 
-    <div class="erro">
+            <img src="/static/background.jpg" class="card-logo">
 
-        {{erro}}
+            <h1>ByteMaster AI</h1>
 
-    </div>
+            <div class="subtitulo">
+                Leitor Inteligente de Cotacoes
+            </div>
 
-    {% endif %}
+            <form method="POST" enctype="multipart/form-data">
 
-    {% if texto_ocr %}
+                <input
+                    type="file"
+                    name="imagem"
+                    accept="image/*,.pdf"
+                    required
+                >
 
-    <details>
+                <button type="submit">
+                    Processar Cotacao
+                </button>
 
-        <summary>
-            Mostrar texto lido pela IA
-        </summary>
+            </form>
 
-        <div class="ocr">
+            {% if arquivo %}
+                <div class="download">
+                    <a href="/download/{{ arquivo }}">
+                        Baixar Planilha Gerada
+                    </a>
+                </div>
+            {% endif %}
 
-            {{texto_ocr}}
+            {% if erro %}
+                <div class="erro">
+                    {{ erro }}
+                </div>
+            {% endif %}
+
+            {% if texto_ocr %}
+                <details>
+                    <summary>Mostrar texto lido pela IA</summary>
+
+                    <div class="ocr">
+                        {{ texto_ocr }}
+                    </div>
+                </details>
+            {% endif %}
+
+            <footer>
+                Criado por Gabriel Menezes
+            </footer>
 
         </div>
 
-    </details>
-
-    {% endif %}
-
-    <a
-        href="/"
-        class="voltar"
-    >
-        Voltar ao Chat
-    </a>
-
-    <footer>
-        Criado por Gabriel Menezes
-    </footer>
-
-</div>
+    </div>
 
 </body>
 </html>

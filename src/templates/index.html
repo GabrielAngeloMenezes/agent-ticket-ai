@@ -24,14 +24,37 @@
             color: #38bdf8;
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .menu-item {
+            display: block;
             background: #111827;
-            padding: 12px;
+            padding: 14px;
             border-radius: 10px;
             margin-bottom: 10px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .menu-item:hover {
+            background: #1e293b;
+        }
+
+        .active {
+            background: #2563eb;
+        }
+
+        .usuario {
+            margin-top: 40px;
+            font-size: 15px;
+        }
+
+        .sair {
+            display: block;
+            margin-top: 15px;
+            color: #38bdf8;
+            text-decoration: none;
         }
 
         .main {
@@ -42,7 +65,7 @@
 
         .header {
             background: #111827;
-            padding: 20px;
+            padding: 18px 20px;
             border-bottom: 1px solid #334155;
             font-size: 20px;
             font-weight: bold;
@@ -55,10 +78,10 @@
         }
 
         .message-user {
-            background: #2563eb;
+            background: #4056e8;
             padding: 15px;
             border-radius: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             max-width: 70%;
             margin-left: auto;
         }
@@ -67,7 +90,7 @@
             background: #1e293b;
             padding: 15px;
             border-radius: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             max-width: 70%;
             border: 1px solid #334155;
         }
@@ -109,9 +132,8 @@
             cursor: pointer;
         }
 
-        a {
-            color: #38bdf8;
-            text-decoration: none;
+        button:hover {
+            background: #0ea5e9;
         }
     </style>
 </head>
@@ -119,17 +141,21 @@
 <body>
 
     <div class="sidebar">
+
         <div class="logo">ByteMaster AI</div>
 
-        <div class="menu-item">Chat</div>
-        <div class="menu-item">Historico</div>
-        <div class="menu-item">Memoria</div>
-        <div class="menu-item">Configuracoes</div>
+        <a href="/" class="menu-item active">Chat</a>
+        <a href="/cotacao" class="menu-item">Cotacao</a>
+        <a href="/" class="menu-item">Historico</a>
+        <a href="/" class="menu-item">Memoria</a>
+        <a href="/" class="menu-item">Configuracoes</a>
 
-        <br>
+        <div class="usuario">
+            Usuario: {{ nome }}
+        </div>
 
-        <p>Usuario: {{ nome }}</p>
-        <a href="/logout">Sair</a>
+        <a href="/logout" class="sair">Sair</a>
+
     </div>
 
     <div class="main">

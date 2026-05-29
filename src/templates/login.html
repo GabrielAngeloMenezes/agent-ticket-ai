@@ -1,29 +1,179 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Login - Agent AI</title>
+<meta charset="UTF-8">
+
+<title>ByteMaster AI - Login</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+
+    background:
+    linear-gradient(
+        rgba(0,0,0,0.78),
+        rgba(0,0,0,0.78)
+    ),
+    url("/static/background.jpg");
+
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+
+    min-height:100vh;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    color:white;
+}
+
+.card{
+    width:450px;
+    max-width:92%;
+
+    background:rgba(0,0,0,0.58);
+    backdrop-filter:blur(10px);
+
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:25px;
+
+    padding:40px;
+    text-align:center;
+
+    box-shadow:0 0 30px rgba(0,0,0,0.4);
+}
+
+.logo{
+    width:150px;
+    margin-bottom:20px;
+    border-radius:18px;
+}
+
+h1{
+    font-size:36px;
+    margin-bottom:8px;
+}
+
+.subtitulo{
+    color:#d1d5db;
+    font-size:16px;
+    margin-bottom:30px;
+}
+
+input{
+    width:100%;
+    padding:15px;
+    border-radius:12px;
+    border:none;
+    background:#111827;
+    color:white;
+    margin-bottom:15px;
+    font-size:16px;
+}
+
+button{
+    width:100%;
+    background:#38bdf8;
+    color:#00111f;
+    border:none;
+    border-radius:12px;
+    padding:15px 30px;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    background:#0ea5e9;
+}
+
+.erro{
+    margin-bottom:20px;
+    color:#ff9b9b;
+}
+
+.link{
+    margin-top:22px;
+    color:#cbd5e1;
+}
+
+a{
+    color:#38bdf8;
+    text-decoration:none;
+    font-weight:bold;
+}
+
+footer{
+    margin-top:30px;
+    color:#cbd5e1;
+    font-size:14px;
+}
+</style>
 </head>
+
 <body>
-    <h1>Entrar</h1>
+
+<div class="card">
+
+    <img
+        src="/static/background.jpg"
+        class="logo"
+    >
+
+    <h1>ByteMaster AI</h1>
+
+    <div class="subtitulo">
+        Acesse sua conta
+    </div>
 
     {% if erro %}
-        <p style="color:red;">{{ erro }}</p>
+        <div class="erro">
+            {{ erro }}
+        </div>
     {% endif %}
 
     <form method="POST">
-        <input type="text" name="nome" placeholder="Nome" required>
-        <br><br>
 
-        <input type="password" name="senha" placeholder="Senha" required>
-        <br><br>
+        <input
+            type="text"
+            name="nome"
+            placeholder="Nome"
+            required
+        >
 
-        <button type="submit">Entrar</button>
+        <input
+            type="password"
+            name="senha"
+            placeholder="Senha"
+            required
+        >
+
+        <button type="submit">
+            Entrar
+        </button>
+
     </form>
 
-    <p>
-        Nao tem conta?
+    <div class="link">
+        Ainda nao tem conta?
         <a href="/register">Criar conta</a>
-    </p>
+    </div>
+
+    <footer>
+        Criado por Gabriel Menezes
+    </footer>
+
+</div>
+
 </body>
 </html>

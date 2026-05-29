@@ -696,6 +696,21 @@ def gerar_planilha_cotacao(itens):
     coluna_qtd = 3
     coluna_descricao = 4
 
+    areas_mescladas = list(ws.merged_cells.ranges)
+
+    for area in areas_mescladas:
+        min_col, min_row, max_col, max_row = area.bounds
+
+        toca_area_preenchimento = not (
+            max_row < linha_inicio or
+            min_row > 80 or
+            max_col < coluna_codigo or
+            min_col > coluna_descricao
+        )
+
+        if toca_area_preenchimento:
+            ws.unmerge_cells(str(area))
+
     for index, item in enumerate(itens):
         linha = linha_inicio + index
 
@@ -717,7 +732,6 @@ def gerar_planilha_cotacao(itens):
     wb.save(caminho_saida)
 
     return nome_arquivo
-
 
 @app.route("/", methods=["GET", "POST"])
 def home():
