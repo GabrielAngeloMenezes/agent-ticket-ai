@@ -1,268 +1,173 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-
+<html>
 <head>
     <meta charset="UTF-8">
-
     <title>ByteMaster AI</title>
 
     <style>
-
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:Arial;
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            height: 100vh;
         }
 
-        body{
-            background:#343541;
-            color:white;
-            display:flex;
-            height:100vh;
+        .sidebar {
+            width: 260px;
+            background: #020617;
+            padding: 20px;
         }
 
-        .sidebar{
-            width:280px;
-            background:#202123;
-            padding:20px;
-            overflow-y:auto;
-            border-right:1px solid #333;
+        .logo {
+            color: #38bdf8;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
         }
 
-        .logo{
-            font-size:32px;
-            font-weight:bold;
-            margin-bottom:5px;
-            color:#19c37d;
+        .menu-item {
+            background: #111827;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
         }
 
-        .sublogo{
-            color:#aaa;
-            margin-bottom:30px;
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .historico{
-            background:#2b2c2f;
-            padding:12px;
-            border-radius:12px;
-            margin-bottom:12px;
-            font-size:14px;
+        .header {
+            background: #111827;
+            padding: 20px;
+            border-bottom: 1px solid #334155;
+            font-size: 20px;
+            font-weight: bold;
         }
 
-        .main{
-            flex:1;
-            display:flex;
-            flex-direction:column;
+        .chat {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
         }
 
-        .topo{
-            padding:20px;
-            border-bottom:1px solid #444;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            background:#343541;
+        .message-user {
+            background: #2563eb;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            max-width: 70%;
+            margin-left: auto;
         }
 
-        .titulo-chat{
-            font-size:24px;
-            font-weight:bold;
+        .message-ai {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            max-width: 70%;
+            border: 1px solid #334155;
         }
 
-        .chat{
-            flex:1;
-            padding:20px;
-            overflow-y:auto;
+        .small {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 8px;
         }
 
-        .msg-user{
-            background:#0b93f6;
-            padding:15px;
-            border-radius:18px;
-            width:fit-content;
-            max-width:70%;
-            margin-left:auto;
-            margin-bottom:15px;
-            line-height:1.5;
+        .form-area {
+            background: #111827;
+            padding: 20px;
+            border-top: 1px solid #334155;
         }
 
-        .msg-bot{
-            background:#444654;
-            padding:15px;
-            border-radius:18px;
-            width:fit-content;
-            max-width:70%;
-            margin-bottom:20px;
-            line-height:1.5;
+        form {
+            display: flex;
+            gap: 10px;
         }
 
-        .formulario{
-            padding:20px;
-            border-top:1px solid #444;
-            display:flex;
-            gap:10px;
-            background:#343541;
+        input {
+            flex: 1;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            background: #020617;
+            color: white;
+            font-size: 16px;
         }
 
-        .formulario input{
-            flex:1;
-            padding:16px;
-            border:none;
-            border-radius:12px;
-            background:#40414f;
-            color:white;
-            font-size:16px;
-            outline:none;
+        button {
+            padding: 16px 25px;
+            border: none;
+            border-radius: 12px;
+            background: #38bdf8;
+            color: #020617;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        .formulario button{
-            background:#19c37d;
-            color:white;
-            border:none;
-            padding:16px 25px;
-            border-radius:12px;
-            cursor:pointer;
-            font-size:16px;
-            font-weight:bold;
+        a {
+            color: #38bdf8;
+            text-decoration: none;
         }
-
-        .formulario button:hover{
-            opacity:0.9;
-        }
-
-        a{
-            color:#19c37d;
-            text-decoration:none;
-        }
-
-        .usuario-box{
-            background:#2b2c2f;
-            padding:12px;
-            border-radius:12px;
-            margin-bottom:20px;
-        }
-
-        .chat-vazio{
-            color:#999;
-            text-align:center;
-            margin-top:50px;
-        }
-
     </style>
 </head>
 
 <body>
 
     <div class="sidebar">
+        <div class="logo">ByteMaster AI</div>
 
-        <div class="logo">
-            ByteMaster
-        </div>
-
-        <div class="sublogo">
-            Inteligência Artificial
-        </div>
-
-        <div class="usuario-box">
-
-            <p>
-                Usuário:
-                <b>{{ nome }}</b>
-            </p>
-
-            <br>
-
-            <a href="/logout">
-                Sair
-            </a>
-
-        </div>
-
-        <h3>Histórico</h3>
+        <div class="menu-item">Chat</div>
+        <div class="menu-item">Historico</div>
+        <div class="menu-item">Memoria</div>
+        <div class="menu-item">Configuracoes</div>
 
         <br>
 
-        {% for item in historico %}
-
-            <div class="historico">
-
-                <b>Você:</b>
-
-                <br><br>
-
-                {{ item.ticket }}
-
-                <br><br>
-
-                <b>ByteMaster:</b>
-
-                <br><br>
-
-                {{ item.categoria }}
-
-            </div>
-
-        {% endfor %}
-
+        <p>Usuario: {{ nome }}</p>
+        <a href="/logout">Sair</a>
     </div>
 
     <div class="main">
 
-        <div class="topo">
-
-            <div class="titulo-chat">
-                ByteMaster AI
-            </div>
-
+        <div class="header">
+            Chat com ByteMaster AI
         </div>
 
         <div class="chat">
 
-            {% if historico|length == 0 %}
-
-                <div class="chat-vazio">
-
-                    <h2>Bem-vindo ao ByteMaster AI ??</h2>
-
-                    <br>
-
-                    <p>
-                        Comece enviando uma mensagem.
-                    </p>
-
-                </div>
-
-            {% endif %}
-
             {% for item in historico %}
 
-                <div class="msg-user">
+                <div class="message-user">
                     {{ item.ticket }}
+                    <div class="small">Voce</div>
                 </div>
 
-                <div class="msg-bot">
+                <div class="message-ai">
                     {{ item.categoria }}
+                    <div class="small">ByteMaster AI</div>
                 </div>
 
             {% endfor %}
 
         </div>
 
-        <form method="POST" class="formulario">
+        <div class="form-area">
+            <form method="POST">
+                <input
+                    type="text"
+                    name="mensagem"
+                    placeholder="Digite sua mensagem..."
+                    required
+                >
 
-            <input
-                type="text"
-                name="mensagem"
-                placeholder="Digite sua mensagem..."
-                required
-            >
-
-            <button type="submit">
-                Enviar
-            </button>
-
-        </form>
+                <button type="submit">Enviar</button>
+            </form>
+        </div>
 
     </div>
 

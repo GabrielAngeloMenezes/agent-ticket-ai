@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+
+<title>ByteMaster AI</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    font-family:Arial, Helvetica, sans-serif;
+
+    background:
+    linear-gradient(
+        rgba(0,0,0,0.75),
+        rgba(0,0,0,0.75)
+    ),
+    url("/static/background.jpg");
+
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+
+    min-height:100vh;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    color:white;
+}
+
+.card{
+
+    width:700px;
+    max-width:95%;
+
+    background:rgba(0,0,0,0.55);
+
+    backdrop-filter:blur(10px);
+
+    border:1px solid rgba(255,255,255,0.15);
+
+    border-radius:25px;
+
+    padding:40px;
+
+    text-align:center;
+
+    box-shadow:
+    0 0 30px rgba(0,0,0,0.4);
+}
+
+.logo{
+
+    width:180px;
+
+    margin-bottom:20px;
+}
+
+h1{
+
+    font-size:42px;
+
+    color:#ffffff;
+
+    margin-bottom:10px;
+}
+
+.subtitulo{
+
+    color:#d1d5db;
+
+    font-size:18px;
+
+    margin-bottom:30px;
+}
+
+input[type=file]{
+
+    width:100%;
+
+    padding:15px;
+
+    border-radius:12px;
+
+    border:none;
+
+    background:#111827;
+
+    color:white;
+
+    margin-bottom:20px;
+}
+
+.botao{
+
+    background:#38bdf8;
+
+    color:#00111f;
+
+    border:none;
+
+    border-radius:12px;
+
+    padding:15px 30px;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:0.3s;
+}
+
+.botao:hover{
+
+    background:#0ea5e9;
+}
+
+.download{
+
+    margin-top:25px;
+}
+
+.download a{
+
+    color:#4ade80;
+
+    font-weight:bold;
+
+    font-size:18px;
+
+    text-decoration:none;
+}
+
+.erro{
+
+    margin-top:25px;
+
+    color:#ff9b9b;
+}
+
+.voltar{
+
+    display:inline-block;
+
+    margin-top:25px;
+
+    color:#38bdf8;
+
+    text-decoration:none;
+}
+
+footer{
+
+    margin-top:35px;
+
+    color:#cbd5e1;
+
+    font-size:14px;
+}
+
+details{
+
+    margin-top:25px;
+
+    text-align:left;
+}
+
+.ocr{
+
+    margin-top:15px;
+
+    background:#0f172a;
+
+    border-radius:10px;
+
+    padding:15px;
+
+    max-height:300px;
+
+    overflow:auto;
+
+    white-space:pre-wrap;
+
+    font-size:12px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+    <img
+        src="/static/background.jpg"
+        class="logo"
+    >
+
+    <h1>ByteMaster AI</h1>
+
+    <div class="subtitulo">
+        Leitor Inteligente de Cotacoes
+    </div>
+
+    <form
+        method="POST"
+        enctype="multipart/form-data"
+    >
+
+        <input
+            type="file"
+            name="imagem"
+            accept="image/*,.pdf"
+            required
+        >
+
+        <button
+            type="submit"
+            class="botao"
+        >
+            Processar Cotacao
+        </button>
+
+    </form>
+
+    {% if arquivo %}
+
+    <div class="download">
+
+        <a href="/download/{{arquivo}}">
+            Baixar Planilha Gerada
+        </a>
+
+    </div>
+
+    {% endif %}
+
+    {% if erro %}
+
+    <div class="erro">
+
+        {{erro}}
+
+    </div>
+
+    {% endif %}
+
+    {% if texto_ocr %}
+
+    <details>
+
+        <summary>
+            Mostrar texto lido pela IA
+        </summary>
+
+        <div class="ocr">
+
+            {{texto_ocr}}
+
+        </div>
+
+    </details>
+
+    {% endif %}
+
+    <a
+        href="/"
+        class="voltar"
+    >
+        Voltar ao Chat
+    </a>
+
+    <footer>
+        Criado por Gabriel Menezes
+    </footer>
+
+</div>
+
+</body>
+</html>
