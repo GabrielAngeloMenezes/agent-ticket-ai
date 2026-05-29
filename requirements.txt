@@ -2,3 +2,7 @@ flask
 openai
 supabase
 gunicorn
+openpyxl
+pytesseract
+pillow
+pymupdf
