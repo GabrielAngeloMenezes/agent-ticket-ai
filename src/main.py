@@ -1,5 +1,7 @@
 import os
 import re
+import json
+import base64
 import shutil
 from datetime import datetime
 
@@ -28,7 +30,6 @@ app.secret_key = os.getenv("SECRET_KEY", "agent-secret-key")
 UPLOAD_FOLDER = "uploads"
 EXPORT_FOLDER = "exports"
 TEMPLATE_FOLDER = "templates_excel"
-
 MODELO_COTACAO = os.path.join(TEMPLATE_FOLDER, "modelo_cotacao.xlsx")
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -41,16 +42,13 @@ def usuario_logado():
 
 def buscar_usuario(nome):
     resposta = supabase.table("usuarios").select("*").eq("nome", nome).execute()
-
     if resposta.data:
         return resposta.data[0]
-
     return None
 
 
 def criar_usuario(nome, senha):
     senha_hash = generate_password_hash(senha)
-
     supabase.table("usuarios").insert({
         "nome": nome,
         "senha": senha_hash
@@ -67,7 +65,6 @@ def buscar_historico(nome, limite=20):
         .limit(limite)
         .execute()
     )
-
     return resposta.data
 
 
@@ -113,15 +110,188 @@ def salvar_mensagem(nome, usuario, resposta):
     }).execute()
 
 
+def limpar_codigo(codigo):
+    codigo = str(codigo).strip().upper()
+    codigo = codigo.replace("$", "S")
+    codigo = codigo.replace(" ", "")
+    codigo = re.sub(r"[^A-Z0-9\-]", "", codigo)
+    return codigo
+
+
+def codigo_valido(codigo):
+    codigo = limpar_codigo(codigo)
+
+    if len(codigo) < 4:
+        return False
+
+    if not re.search(r"\d", codigo):
+        return False
+
+    if codigo in [
+        "0001", "0002", "0003", "0004", "0005",
+        "0006", "0007", "0008", "0009", "0010",
+        "2026", "18775", "005922"
+    ]:
+        return False
+
+    return True
+
+
+def limpar_itens(itens):
+    itens_limpos = []
+
+    for item in itens:
+        codigo = str(item.get("codigo", "")).strip().upper()
+        qtd = str(item.get("qtd", "1")).strip()
+
+        codigo = codigo.replace(",", " / ")
+        codigo = codigo.replace(";", " / ")
+        codigo = codigo.replace("|", " / ")
+
+        partes_codigo = re.split(r"\s*/\s*|\s+", codigo)
+
+        codigos_validos = []
+
+        for parte in partes_codigo:
+            parte = limpar_codigo(parte)
+
+            if codigo_valido(parte):
+                codigos_validos.append(parte)
+
+        if not codigos_validos:
+            continue
+
+        try:
+            qtd_num = float(qtd.replace(",", "."))
+        except:
+            qtd = "1"
+            qtd_num = 1
+
+        if qtd_num < 1 or qtd_num > 99:
+            qtd = "1"
+
+        codigo_final = " / ".join(codigos_validos)
+
+        itens_limpos.append({
+            "codigo": codigo_final,
+            "qtd": qtd,
+            "descricao": "ELEMENTO FILTRO"
+        })
+
+    return itens_limpos
+
+
+def extrair_itens_com_visao(caminho_imagem):
+    with open(caminho_imagem, "rb") as arquivo:
+        imagem_base64 = base64.b64encode(arquivo.read()).decode("utf-8")
+
+    extensao = os.path.splitext(caminho_imagem)[1].lower()
+
+    mime = "image/jpeg"
+
+    if extensao == ".png":
+        mime = "image/png"
+
+    if extensao == ".webp":
+        mime = "image/webp"
+
+    prompt = """
+Analise esta imagem de cotacao, requisicao, lista de materiais ou planilha.
+
+Extraia APENAS os itens reais da tabela.
+
+REGRA MAIS IMPORTANTE:
+- cada linha real da tabela deve virar apenas 1 item na resposta
+- se uma mesma linha tiver mais de um codigo, coloque todos na mesma celula codigo, separados por " / "
+- nao crie uma linha separada para cada codigo da mesma linha
+- a descricao deve ser sempre "ELEMENTO FILTRO"
+
+Ignore:
+- cabecalho
+- cliente
+- endereco
+- telefone
+- data
+- numero da requisicao
+- solicitante
+- rodape
+- observacoes
+- valores
+- marcas isoladas
+- titulos de coluna
+
+Extraia somente:
+- codigo
+- qtd
+- descricao
+
+Regras:
+- codigo pode ser numerico ou alfanumerico
+- codigo nao e a sequencia do item 0001, 0002, 0003
+- quantidade normalmente fica entre 1 e 99
+- quantidade pode repetir varias vezes
+- descricao sempre deve ser "ELEMENTO FILTRO"
+- nao invente dados
+- retorne somente JSON valido
+- nao use markdown
+
+Formato obrigatorio:
+{
+  "itens": [
+    {
+      "codigo": "CODIGO1 / CODIGO2",
+      "qtd": "1",
+      "descricao": "ELEMENTO FILTRO"
+    }
+  ]
+}
+"""
+
+    resposta = client.chat.completions.create(
+        model="google/gemini-2.0-flash-exp:free",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "data:" + mime + ";base64," + imagem_base64
+                        }
+                    }
+                ]
+            }
+        ],
+        temperature=0,
+        max_tokens=2000
+    )
+
+    conteudo = resposta.choices[0].message.content
+
+    if not conteudo:
+        return []
+
+    conteudo = conteudo.strip()
+    conteudo = conteudo.replace("```json", "")
+    conteudo = conteudo.replace("```", "")
+    conteudo = conteudo.strip()
+
+    dados = json.loads(conteudo)
+
+    return limpar_itens(dados.get("itens", []))
+
+
 def preparar_imagem_para_ocr(caminho_imagem):
     imagem = Image.open(caminho_imagem)
-
     imagem = imagem.convert("L")
     imagem = ImageOps.autocontrast(imagem)
     imagem = ImageEnhance.Contrast(imagem).enhance(3)
     imagem = imagem.resize((imagem.width * 2, imagem.height * 2))
     imagem = imagem.filter(ImageFilter.SHARPEN)
-
     return imagem
 
 
@@ -144,12 +314,10 @@ def ler_texto_pdf(caminho_pdf):
 
     for numero_pagina in range(len(documento)):
         pagina = documento[numero_pagina]
-
         texto_pagina = pagina.get_text()
 
         if texto_pagina and len(texto_pagina.strip()) > 30:
             texto_final += "\n" + texto_pagina
-
         else:
             pix = pagina.get_pixmap(matrix=fitz.Matrix(2, 2))
 
@@ -161,7 +329,6 @@ def ler_texto_pdf(caminho_pdf):
             pix.save(nome_imagem)
 
             texto_ocr = ler_texto_imagem(nome_imagem)
-
             texto_final += "\n" + texto_ocr
 
     documento.close()
@@ -178,24 +345,21 @@ def ler_texto_arquivo(caminho_arquivo):
     return ler_texto_imagem(caminho_arquivo)
 
 
-def limpar_codigo(codigo):
-    codigo = codigo.strip().upper()
-    codigo = codigo.replace("$", "S")
-    codigo = codigo.replace(" ", "")
-    codigo = re.sub(r"[^A-Z0-9\-]", "", codigo)
-
-    return codigo
-
-
 def eh_item_sequencial(valor):
     valor = valor.strip()
 
-    if re.match(r"^0{0,3}\d{1,3}$", valor):
-        numero = int(valor)
-        if numero >= 1 and numero <= 999:
-            return True
+    if not valor.isdigit():
+        return False
 
-    return False
+    if len(valor) > 4:
+        return False
+
+    try:
+        numero = int(valor)
+    except:
+        return False
+
+    return numero >= 1 and numero <= 999
 
 
 def eh_quantidade(valor):
@@ -206,64 +370,14 @@ def eh_quantidade(valor):
     except:
         return False
 
-    if numero >= 1 and numero <= 99:
-        return True
-
-    return False
-
-
-def eh_codigo(valor):
-    valor = limpar_codigo(valor)
-
-    if len(valor) < 4:
-        return False
-
-    if not re.search(r"\d", valor):
-        return False
-
-    if eh_item_sequencial(valor):
-        return False
-
-    palavras_ruins = [
-        "2026",
-        "005922",
-        "18775",
-        "0001",
-        "0002",
-        "0003",
-        "0004",
-        "0005",
-        "0006",
-        "0007",
-        "0008",
-        "0009",
-        "0010"
-    ]
-
-    if valor in palavras_ruins:
-        return False
-
-    return True
+    return numero >= 1 and numero <= 99
 
 
 def limpar_descricao(texto):
-    texto = texto.upper()
-
-    texto = texto.replace("|", " ")
-    texto = texto.replace("_", " ")
-    texto = texto.replace("-", " ")
-
-    texto = re.sub(r"[^A-Z0-9 ]", " ", texto)
-    texto = re.sub(r"\s+", " ", texto).strip()
-
-    if not texto:
-        return "FILTRO"
-
-    return texto
+    return "ELEMENTO FILTRO"
 
 
 def classificar_linha_cotacao(linha):
-    linha_original = linha
     linha = linha.strip().upper()
 
     if not linha:
@@ -277,21 +391,15 @@ def classificar_linha_cotacao(linha):
     if not tokens:
         return None
 
-    codigo = None
+    codigos = []
     qtd = None
-    descricao_tokens = []
 
     for token in tokens:
         token_limpo = limpar_codigo(token)
 
         if token_limpo in [
-            "ITEM",
-            "QTD",
-            "PRODUTO",
-            "EQUIVALENCIA",
-            "DESCRICAO",
-            "DESCRICADO",
-            "CODIGO"
+            "ITEM", "QTD", "PRODUTO", "EQUIVALENCIA",
+            "DESCRICAO", "DESCRICADO", "CODIGO"
         ]:
             continue
 
@@ -302,29 +410,21 @@ def classificar_linha_cotacao(linha):
             qtd = token
             continue
 
-        if codigo is None and eh_codigo(token_limpo):
-            codigo = token_limpo
-            continue
+        if codigo_valido(token_limpo):
+            codigos.append(token_limpo)
 
-        descricao_tokens.append(token)
-
-    if codigo is None:
+    if not codigos:
         return None
 
     if qtd is None:
         qtd = "1"
 
-    descricao = " ".join(descricao_tokens)
-    descricao = descricao.replace(codigo, " ")
-    descricao = limpar_descricao(descricao)
-
-    if len(descricao) < 3:
-        descricao = "FILTRO"
+    codigo_final = " / ".join(codigos)
 
     return {
-        "codigo": codigo,
+        "codigo": codigo_final,
         "qtd": qtd,
-        "descricao": descricao
+        "descricao": "ELEMENTO FILTRO"
     }
 
 
@@ -351,7 +451,7 @@ def extrair_itens_do_texto(texto):
         codigos_usados.add(codigo)
         itens.append(item)
 
-    return itens
+    return limpar_itens(itens)
 
 
 def gerar_planilha_cotacao(itens):
@@ -396,7 +496,7 @@ def gerar_planilha_cotacao(itens):
 
         ws.cell(row=linha, column=coluna_codigo).value = item.get("codigo", "")
         ws.cell(row=linha, column=coluna_qtd).value = item.get("qtd", "")
-        ws.cell(row=linha, column=coluna_descricao).value = item.get("descricao", "")
+        ws.cell(row=linha, column=coluna_descricao).value = "ELEMENTO FILTRO"
 
     wb.save(caminho_saida)
 
@@ -450,7 +550,6 @@ def cotacao():
 
         if not arquivo_enviado:
             erro = "Nenhum arquivo enviado"
-
         else:
             nome_seguro = secure_filename(arquivo_enviado.filename)
 
@@ -462,22 +561,38 @@ def cotacao():
             arquivo_enviado.save(caminho_arquivo)
 
             try:
+                extensao = os.path.splitext(caminho_arquivo)[1].lower()
+
+                itens = []
+
+                if extensao in [".jpg", ".jpeg", ".png", ".webp"]:
+                    try:
+                        itens = extrair_itens_com_visao(caminho_arquivo)
+                    except Exception as e:
+                        print("Erro na visao:", e)
+                        itens = []
+
                 texto_ocr = ler_texto_arquivo(caminho_arquivo)
 
-                itens = extrair_itens_do_texto(texto_ocr)
+                if not itens:
+                    itens = extrair_itens_do_texto(texto_ocr)
+
+                print("=" * 50)
+                print("TEXTO OCR:")
+                print(texto_ocr)
+                print("=" * 50)
+                print("ITENS ENCONTRADOS:")
+                print(itens)
+                print("=" * 50)
 
                 if not itens:
                     erro = "Nao consegui encontrar itens"
-
                 else:
                     arquivo = gerar_planilha_cotacao(itens)
 
             except Exception as e:
                 erro = str(e)
-print("=" * 50)
-print("TEXTO OCR:")
-print(texto_ocr)
-print("=" * 50)
+
     return render_template(
         "cotacao.html",
         erro=erro,
@@ -532,7 +647,6 @@ def register():
 
         if buscar_usuario(nome):
             erro = "Esse nome ja existe"
-
         else:
             criar_usuario(nome, senha)
             session["usuario_nome"] = nome
