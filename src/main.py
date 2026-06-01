@@ -29,10 +29,7 @@ UPLOAD_FOLDER = "uploads"
 EXPORT_FOLDER = "exports"
 TEMPLATE_FOLDER = "templates_excel"
 
-MODELO_COTACAO = os.path.join(
-    TEMPLATE_FOLDER,
-    "modelo_cotacao.xlsx"
-)
+MODELO_COTACAO = os.path.join(TEMPLATE_FOLDER, "modelo_cotacao.xlsx")
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(EXPORT_FOLDER, exist_ok=True)
@@ -43,13 +40,7 @@ def usuario_logado():
 
 
 def buscar_usuario(nome):
-    resposta = (
-        supabase
-        .table("usuarios")
-        .select("*")
-        .eq("nome", nome)
-        .execute()
-    )
+    resposta = supabase.table("usuarios").select("*").eq("nome", nome).execute()
 
     if resposta.data:
         return resposta.data[0]
@@ -135,81 +126,15 @@ def preparar_imagem_para_ocr(caminho_imagem):
 
 
 def ler_texto_imagem(caminho_imagem):
-    textos = []
-
     imagem = preparar_imagem_para_ocr(caminho_imagem)
 
-    configs = [
-        "--psm 6",
-        "--psm 4",
-        "--psm 11"
-    ]
-
-    for config in configs:
-        try:
-            texto = pytesseract.image_to_string(
-                imagem,
-                lang="eng",
-                config=config
-            )
-            textos.append(texto)
-        except:
-            pass
-
-    melhor_texto = ""
-    melhor_score = -1
-
-    for texto in textos:
-        score = pontuar_texto_ocr(texto)
-
-        if score > melhor_score:
-            melhor_score = score
-            melhor_texto = texto
-
-    return melhor_texto
-
-
-def pontuar_texto_ocr(texto):
-    if not texto:
-        return 0
-
-    texto_upper = texto.upper()
-
-    score = 0
-
-    palavras_boas = [
-        "FILTRO",
-        "ELEMENTO",
-        "DONALDSON",
-        "MANN",
-        "WEGA",
-        "RACOR",
-        "CATERPILLAR",
-        "VOLVO",
-        "MOTOR",
-        "OLEO",
-        "AR",
-        "COMBUSTIVEL",
-        "HIDRAULICO",
-        "QUANTIDADE",
-        "MATERIAL",
-        "PRODUTO",
-        "DESCRICAO"
-    ]
-
-    for palavra in palavras_boas:
-        if palavra in texto_upper:
-            score += 10
-
-    codigos = re.findall(
-        r"\b[A-Z0-9\-]{4,20}\b",
-        texto_upper
+    texto = pytesseract.image_to_string(
+        imagem,
+        lang="eng",
+        config="--psm 6"
     )
 
-    score += len(codigos) * 2
-    score += len(texto) / 100
-
-    return score
+    return texto
 
 
 def ler_texto_pdf(caminho_pdf):
@@ -224,6 +149,7 @@ def ler_texto_pdf(caminho_pdf):
 
         if texto_pagina and len(texto_pagina.strip()) > 30:
             texto_final += "\n" + texto_pagina
+
         else:
             pix = pagina.get_pixmap(matrix=fitz.Matrix(2, 2))
 
@@ -256,182 +182,52 @@ def limpar_codigo(codigo):
     codigo = codigo.strip().upper()
     codigo = codigo.replace("$", "S")
     codigo = codigo.replace(" ", "")
-
-    codigo = re.sub(
-        r"[^A-Z0-9\-]",
-        "",
-        codigo
-    )
+    codigo = re.sub(r"[^A-Z0-9\-]", "", codigo)
 
     return codigo
 
 
-def linha_de_cabecalho(linha):
-    linha = linha.upper()
+def eh_item_sequencial(valor):
+    valor = valor.strip()
 
-    palavras = [
-        "CODIGO",
-        "COD",
-        "COD FABRICAN",
-        "FABRICAN",
-        "PRODUTO",
-        "QUANTIDADE",
-        "QTD",
-        "DESCRICAO",
-        "DESCRICAO",
-        "MATERIAL"
-    ]
-
-    total = 0
-
-    for palavra in palavras:
-        if palavra in linha:
-            total += 1
-
-    return total >= 2
-
-
-def linha_de_lixo(linha):
-    linha = linha.upper()
-
-    ignorar = [
-        "SOLICITACAO",
-        "REQUISICAO",
-        "NUMERO",
-        "SOLICITANTE",
-        "DATA",
-        "EMISSAO",
-        "FILIAL",
-        "FORNECEDOR",
-        "APLICACAO",
-        "OBSERVACAO",
-        "FUNCIONARIO",
-        "APROVACAO",
-        "TOTAL",
-        "ENDERECO",
-        "AVENIDA",
-        "TELEFONE",
-        "FOLHA",
-        "USUARIO",
-        "COMPRADOR"
-    ]
-
-    for palavra in ignorar:
-        if palavra in linha:
+    if re.match(r"^0{0,3}\d{1,3}$", valor):
+        numero = int(valor)
+        if numero >= 1 and numero <= 999:
             return True
 
     return False
 
 
-def extrair_quantidade_inteligente(linha, numero_item_esperado):
-    candidatos = re.findall(
-        r"\b\d{1,4}(?:,\d{1,2})?\b",
-        linha
-    )
+def eh_quantidade(valor):
+    valor = valor.strip().replace(",", ".")
 
-    quantidades = []
-
-    for candidato in candidatos:
-        normalizado = candidato.replace(",", ".")
-
-        try:
-            valor = float(normalizado)
-        except:
-            continue
-
-        numero_item_texto = str(numero_item_esperado)
-        numero_item_zero = str(numero_item_esperado).zfill(4)
-
-        if candidato == numero_item_texto:
-            continue
-
-        if candidato == numero_item_zero:
-            continue
-
-        if valor < 1:
-            continue
-
-        if valor > 99:
-            continue
-
-        quantidades.append(candidato)
-
-    if quantidades:
-        return quantidades[0]
-
-    return "1"
-
-
-def extrair_descricao(linha, codigo, qtd):
-    texto = linha.upper()
-
-    texto = texto.replace(codigo, "")
-    texto = texto.replace(str(qtd), "")
-
-    texto = re.sub(r"\b\d{5,20}\b", "", texto)
-    texto = re.sub(r"\b[A-Z0-9\-]{5,20}\b", "", texto)
-
-    texto = texto.replace("|", " ")
-    texto = texto.replace("_", " ")
-    texto = texto.replace("-", " ")
-
-    texto = re.sub(r"[^A-Z ]", " ", texto)
-    texto = re.sub(r"\s+", " ", texto).strip()
-
-    if "LUB" in texto or "OLEO" in texto:
-        return "FILTRO LUBRIFICANTE"
-
-    if "COMB" in texto:
-        return "FILTRO COMBUSTIVEL"
-
-    if "AGUA" in texto:
-        return "FILTRO SEPARADOR DE AGUA"
-
-    if "CABINE" in texto:
-        return "FILTRO AR CABINE"
-
-    if "PRIM" in texto and "AR" in texto:
-        return "FILTRO AR PRIMARIO"
-
-    if "SEC" in texto and "AR" in texto:
-        return "FILTRO AR SECUNDARIO"
-
-    if "HIDRAUL" in texto:
-        return "FILTRO HIDRAULICO"
-
-    if "AR" in texto:
-        return "FILTRO AR"
-
-    if "ELEMENTO" in texto:
-        return "ELEMENTO FILTRO"
-
-    if "FILTRO" in texto:
-        return "FILTRO"
-
-    if texto:
-        return texto
-
-    return "FILTRO"
-
-
-def codigo_valido(codigo):
-    codigo = limpar_codigo(codigo)
-
-    if len(codigo) < 4:
+    try:
+        numero = float(valor)
+    except:
         return False
 
-    if not re.search(r"\d", codigo):
+    if numero >= 1 and numero <= 99:
+        return True
+
+    return False
+
+
+def eh_codigo(valor):
+    valor = limpar_codigo(valor)
+
+    if len(valor) < 4:
         return False
 
-    if codigo.isdigit() and len(codigo) <= 3:
+    if not re.search(r"\d", valor):
         return False
 
-    ruins = [
-        "DE1",
+    if eh_item_sequencial(valor):
+        return False
+
+    palavras_ruins = [
         "2026",
-        "006",
-        "18775",
         "005922",
+        "18775",
         "0001",
         "0002",
         "0003",
@@ -441,231 +237,121 @@ def codigo_valido(codigo):
         "0007",
         "0008",
         "0009",
-        "0010",
-        "0011",
-        "0012"
+        "0010"
     ]
 
-    if codigo in ruins:
+    if valor in palavras_ruins:
         return False
 
     return True
 
 
-def extrair_por_linha_livre(texto):
+def limpar_descricao(texto):
+    texto = texto.upper()
+
+    texto = texto.replace("|", " ")
+    texto = texto.replace("_", " ")
+    texto = texto.replace("-", " ")
+
+    texto = re.sub(r"[^A-Z0-9 ]", " ", texto)
+    texto = re.sub(r"\s+", " ", texto).strip()
+
+    if not texto:
+        return "FILTRO"
+
+    return texto
+
+
+def classificar_linha_cotacao(linha):
+    linha_original = linha
+    linha = linha.strip().upper()
+
+    if not linha:
+        return None
+
+    tokens = re.findall(
+        r"\d+,\d+|[A-Z0-9\-]+",
+        linha
+    )
+
+    if not tokens:
+        return None
+
+    codigo = None
+    qtd = None
+    descricao_tokens = []
+
+    for token in tokens:
+        token_limpo = limpar_codigo(token)
+
+        if token_limpo in [
+            "ITEM",
+            "QTD",
+            "PRODUTO",
+            "EQUIVALENCIA",
+            "DESCRICAO",
+            "DESCRICADO",
+            "CODIGO"
+        ]:
+            continue
+
+        if eh_item_sequencial(token_limpo):
+            continue
+
+        if qtd is None and eh_quantidade(token):
+            qtd = token
+            continue
+
+        if codigo is None and eh_codigo(token_limpo):
+            codigo = token_limpo
+            continue
+
+        descricao_tokens.append(token)
+
+    if codigo is None:
+        return None
+
+    if qtd is None:
+        qtd = "1"
+
+    descricao = " ".join(descricao_tokens)
+    descricao = descricao.replace(codigo, " ")
+    descricao = limpar_descricao(descricao)
+
+    if len(descricao) < 3:
+        descricao = "FILTRO"
+
+    return {
+        "codigo": codigo,
+        "qtd": qtd,
+        "descricao": descricao
+    }
+
+
+def extrair_itens_do_texto(texto):
     itens = []
-    linhas = texto.splitlines()
     codigos_usados = set()
-    numero_item_esperado = 1
+
+    linhas = texto.splitlines()
 
     for linha in linhas:
-        linha_original = linha
-        linha = linha.strip().upper()
+        item = classificar_linha_cotacao(linha)
 
-        if not linha:
+        if not item:
             continue
 
-        if linha_de_lixo(linha):
-            continue
-
-        if linha_de_cabecalho(linha):
-            continue
-
-        codigos = re.findall(
-            r"\b[A-Z0-9\-]{4,20}\b",
-            linha
-        )
-
-        if not codigos:
-            continue
-
-        codigo = None
-
-        for candidato in codigos:
-            candidato = limpar_codigo(candidato)
-
-            if not codigo_valido(candidato):
-                continue
-
-            if candidato in codigos_usados:
-                continue
-
-            codigo = candidato
-            break
-
-        if not codigo:
-            continue
-
-        duplicado = False
-
-        for usado in codigos_usados:
-            if codigo in usado or usado in codigo:
-                duplicado = True
-
-        if duplicado:
-            continue
-
-        qtd = extrair_quantidade_inteligente(
-            linha_original,
-            numero_item_esperado
-        )
-
-        descricao = extrair_descricao(
-            linha_original,
-            codigo,
-            qtd
-        )
-
-        codigos_usados.add(codigo)
-
-        itens.append({
-            "codigo": codigo,
-            "qtd": qtd,
-            "descricao": descricao
-        })
-
-        numero_item_esperado += 1
-
-    return itens
-
-
-def extrair_por_tabela(texto):
-    itens = []
-    linhas = texto.splitlines()
-
-    inicio_tabela = None
-
-    for i, linha in enumerate(linhas):
-        if linha_de_cabecalho(linha):
-            inicio_tabela = i + 1
-            break
-
-    if inicio_tabela is None:
-        return []
-
-    codigos_usados = set()
-    numero_item_esperado = 1
-
-    for linha in linhas[inicio_tabela:]:
-        linha_original = linha
-        linha = linha.strip().upper()
-
-        if not linha:
-            continue
-
-        if linha_de_lixo(linha):
-            continue
-
-        if linha_de_cabecalho(linha):
-            continue
-
-        codigos = re.findall(
-            r"\b[A-Z0-9\-]{4,20}\b",
-            linha
-        )
-
-        if not codigos:
-            continue
-
-        codigo = None
-
-        for candidato in codigos:
-            candidato = limpar_codigo(candidato)
-
-            if not codigo_valido(candidato):
-                continue
-
-            if candidato in codigos_usados:
-                continue
-
-            if "PE" in candidato and len(candidato) > 8:
-                continue
-
-            codigo = candidato
-            break
-
-        if not codigo:
-            continue
-
-        duplicado = False
-
-        for usado in codigos_usados:
-            if codigo in usado or usado in codigo:
-                duplicado = True
-
-        if duplicado:
-            continue
-
-        qtd = extrair_quantidade_inteligente(
-            linha_original,
-            numero_item_esperado
-        )
-
-        descricao = extrair_descricao(
-            linha_original,
-            codigo,
-            qtd
-        )
-
-        codigos_usados.add(codigo)
-
-        itens.append({
-            "codigo": codigo,
-            "qtd": qtd,
-            "descricao": descricao
-        })
-
-        numero_item_esperado += 1
-
-    return itens
-
-
-def pontuar_itens(itens):
-    if not itens:
-        return 0
-
-    score = 0
-
-    score += len(itens) * 10
-
-    for item in itens:
         codigo = item.get("codigo", "")
-        qtd = item.get("qtd", "")
-        descricao = item.get("descricao", "")
 
-        if codigo:
-            score += 5
+        if not codigo:
+            continue
 
-        if qtd:
-            score += 3
+        if codigo in codigos_usados:
+            continue
 
-        if descricao and descricao != "FILTRO":
-            score += 4
+        codigos_usados.add(codigo)
+        itens.append(item)
 
-        if len(codigo) >= 5:
-            score += 2
-
-    return score
-
-
-def escolher_melhor_resultado(itens_tabela, itens_livre):
-    score_tabela = pontuar_itens(itens_tabela)
-    score_livre = pontuar_itens(itens_livre)
-
-    if score_tabela >= score_livre:
-        return itens_tabela
-
-    return itens_livre
-
-
-def extrair_cotacao_por_regex(texto):
-    itens_tabela = extrair_por_tabela(texto)
-    itens_livre = extrair_por_linha_livre(texto)
-
-    return escolher_melhor_resultado(
-        itens_tabela,
-        itens_livre
-    )
+    return itens
 
 
 def gerar_planilha_cotacao(itens):
@@ -675,18 +361,12 @@ def gerar_planilha_cotacao(itens):
         ".xlsx"
     )
 
-    caminho_saida = os.path.join(
-        EXPORT_FOLDER,
-        nome_arquivo
-    )
+    caminho_saida = os.path.join(EXPORT_FOLDER, nome_arquivo)
 
     if not os.path.exists(MODELO_COTACAO):
         raise Exception("modelo_cotacao.xlsx nao encontrado")
 
-    shutil.copy(
-        MODELO_COTACAO,
-        caminho_saida
-    )
+    shutil.copy(MODELO_COTACAO, caminho_saida)
 
     wb = load_workbook(caminho_saida)
     ws = wb.active
@@ -701,37 +381,27 @@ def gerar_planilha_cotacao(itens):
     for area in areas_mescladas:
         min_col, min_row, max_col, max_row = area.bounds
 
-        toca_area_preenchimento = not (
+        toca_area = not (
             max_row < linha_inicio or
             min_row > 80 or
             max_col < coluna_codigo or
             min_col > coluna_descricao
         )
 
-        if toca_area_preenchimento:
+        if toca_area:
             ws.unmerge_cells(str(area))
 
     for index, item in enumerate(itens):
         linha = linha_inicio + index
 
-        ws.cell(
-            row=linha,
-            column=coluna_codigo
-        ).value = item.get("codigo", "")
-
-        ws.cell(
-            row=linha,
-            column=coluna_qtd
-        ).value = item.get("qtd", "")
-
-        ws.cell(
-            row=linha,
-            column=coluna_descricao
-        ).value = item.get("descricao", "")
+        ws.cell(row=linha, column=coluna_codigo).value = item.get("codigo", "")
+        ws.cell(row=linha, column=coluna_qtd).value = item.get("qtd", "")
+        ws.cell(row=linha, column=coluna_descricao).value = item.get("descricao", "")
 
     wb.save(caminho_saida)
 
     return nome_arquivo
+
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -782,9 +452,7 @@ def cotacao():
             erro = "Nenhum arquivo enviado"
 
         else:
-            nome_seguro = secure_filename(
-                arquivo_enviado.filename
-            )
+            nome_seguro = secure_filename(arquivo_enviado.filename)
 
             caminho_arquivo = os.path.join(
                 UPLOAD_FOLDER,
@@ -794,39 +462,34 @@ def cotacao():
             arquivo_enviado.save(caminho_arquivo)
 
             try:
-                texto_ocr = ler_texto_arquivo(
-                    caminho_arquivo
-                )
+                texto_ocr = ler_texto_arquivo(caminho_arquivo)
 
-                itens = extrair_cotacao_por_regex(
-                    texto_ocr
-                )
+                itens = extrair_itens_do_texto(texto_ocr)
 
                 if not itens:
                     erro = "Nao consegui encontrar itens"
 
                 else:
-                    arquivo = gerar_planilha_cotacao(
-                        itens
-                    )
+                    arquivo = gerar_planilha_cotacao(itens)
 
             except Exception as e:
                 erro = str(e)
-
+print("=" * 50)
+print("TEXTO OCR:")
+print(texto_ocr)
+print("=" * 50)
     return render_template(
         "cotacao.html",
         erro=erro,
         arquivo=arquivo,
-        texto_ocr=texto_ocr
+        texto_ocr=texto_ocr,
+        nome=session.get("usuario_nome")
     )
 
 
 @app.route("/download/<nome_arquivo>")
 def download(nome_arquivo):
-    caminho = os.path.join(
-        EXPORT_FOLDER,
-        nome_arquivo
-    )
+    caminho = os.path.join(EXPORT_FOLDER, nome_arquivo)
 
     return send_file(
         caminho,

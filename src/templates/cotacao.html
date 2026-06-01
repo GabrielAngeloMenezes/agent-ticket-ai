@@ -67,10 +67,11 @@
             justify-content: center;
             align-items: center;
             padding: 30px;
+            overflow: auto;
         }
 
         .card {
-            width: 650px;
+            width: 750px;
             max-width: 95%;
             background: rgba(0,0,0,0.58);
             backdrop-filter: blur(10px);
@@ -137,6 +138,7 @@
         .erro {
             margin-top: 25px;
             color: #ff9b9b;
+            font-weight: bold;
         }
 
         details {
@@ -149,10 +151,11 @@
             background: #0f172a;
             border-radius: 10px;
             padding: 15px;
-            max-height: 250px;
+            max-height: 300px;
             overflow: auto;
             white-space: pre-wrap;
             font-size: 12px;
+            color: #d1d5db;
         }
 
         footer {
@@ -224,15 +227,17 @@
                 </div>
             {% endif %}
 
-            {% if texto_ocr %}
-                <details>
-                    <summary>Mostrar texto lido pela IA</summary>
+            <details open>
+                <summary>Texto lido pelo OCR</summary>
 
-                    <div class="ocr">
+                <div class="ocr">
+                    {% if texto_ocr %}
                         {{ texto_ocr }}
-                    </div>
-                </details>
-            {% endif %}
+                    {% else %}
+                        Nenhum texto foi lido.
+                    {% endif %}
+                </div>
+            </details>
 
             <footer>
                 Criado por Gabriel Menezes
