@@ -601,9 +601,6 @@ def home():
 
 @app.route("/cotacao", methods=["GET", "POST"])
 def cotacao():
-
-    print("######### TESTE BYTE MASTER #########")
-
     if not usuario_logado():
         return redirect("/login")
 
@@ -612,6 +609,8 @@ def cotacao():
     texto_ocr = None
 
     if request.method == "POST":
+        print("######### TESTE BYTE MASTER #########", flush=True)
+
         arquivo_enviado = request.files.get("imagem")
 
         if not arquivo_enviado:
@@ -633,37 +632,45 @@ def cotacao():
 
                 if extensao in [".jpg", ".jpeg", ".png", ".webp"]:
                     try:
+                        print("Tentando IA de visao...", flush=True)
                         itens = extrair_itens_com_visao(caminho_arquivo)
+                        print("Itens pela visao:", itens, flush=True)
+
                     except Exception as erro_visao:
-                        print("Erro na visao:", erro_visao)
+                        print("ERRO NA VISAO:", erro_visao, flush=True)
+                        erro = "Erro na IA de visao: " + str(erro_visao)
                         itens = []
 
                 texto_ocr = ""
 
-                try:
-                    texto_ocr = ler_texto_arquivo(caminho_arquivo)
+                if os.name == "nt":
+                    try:
+                        texto_ocr = ler_texto_arquivo(caminho_arquivo)
 
-                    if not itens:
-                        itens = extrair_itens_do_texto(texto_ocr)
+                        if not itens:
+                            itens = extrair_itens_do_texto(texto_ocr)
 
-                except Exception as erro_ocr:
-                    print("OCR ignorado:", erro_ocr)
+                    except Exception as erro_ocr:
+                        print("OCR ignorado:", erro_ocr, flush=True)
 
-                print("=" * 50)
-                print("TEXTO OCR:")
-                print(texto_ocr)
-                print("=" * 50)
-                print("ITENS ENCONTRADOS:")
-                print(itens)
-                print("=" * 50)
+                print("=" * 50, flush=True)
+                print("TEXTO OCR:", flush=True)
+                print(texto_ocr, flush=True)
+                print("=" * 50, flush=True)
+                print("ITENS ENCONTRADOS:", flush=True)
+                print(itens, flush=True)
+                print("=" * 50, flush=True)
 
-                if not itens:
+                if not itens and erro is None:
                     erro = "Nao consegui encontrar itens"
-                else:
+
+                if itens:
                     arquivo = gerar_planilha_cotacao(itens)
+                    erro = None
 
             except Exception as e:
                 erro = str(e)
+                print("ERRO GERAL:", e, flush=True)
 
     return render_template(
         "cotacao.html",
