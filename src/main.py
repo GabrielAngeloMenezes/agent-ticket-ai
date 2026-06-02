@@ -16,8 +16,10 @@ from openpyxl import load_workbook
 
 from agent.supabase_client import supabase
 
-
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = (
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    )
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
