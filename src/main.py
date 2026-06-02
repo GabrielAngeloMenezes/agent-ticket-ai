@@ -29,10 +29,16 @@ client = OpenAI(
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "agent-secret-key")
 
-UPLOAD_FOLDER = "uploads"
-EXPORT_FOLDER = "exports"
-TEMPLATE_FOLDER = "templates_excel"
-MODELO_COTACAO = os.path.join(TEMPLATE_FOLDER, "modelo_cotacao.xlsx")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+EXPORT_FOLDER = os.path.join(BASE_DIR, "exports")
+TEMPLATE_FOLDER = os.path.join(BASE_DIR, "templates_excel")
+
+MODELO_COTACAO = os.path.join(
+    TEMPLATE_FOLDER,
+    "modelo_cotacao.xlsx"
+)
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(EXPORT_FOLDER, exist_ok=True)
