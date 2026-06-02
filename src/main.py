@@ -253,55 +253,31 @@ def extrair_itens_com_visao(caminho_imagem):
         mime = "image/webp"
 
     prompt = """
-Analise esta imagem de cotacao, requisicao, lista de materiais ou planilha.
+Voce deve analisar a imagem e extrair somente os itens reais.
 
-Extraia APENAS os itens reais da tabela.
-
-REGRA MAIS IMPORTANTE:
-- cada linha real da tabela deve virar apenas 1 item na resposta
-- se uma mesma linha tiver mais de um codigo, coloque todos na mesma celula codigo, separados por " / "
-- nao crie uma linha separada para cada codigo da mesma linha
-- a descricao deve ser sempre "ELEMENTO FILTRO"
-
-Ignore:
-- cabecalho
-- cliente
-- endereco
-- telefone
-- data
-- numero da requisicao
-- solicitante
-- rodape
-- observacoes
-- valores
-- marcas isoladas
-- titulos de coluna
-
-Extraia somente:
-- codigo
-- qtd
-- descricao
-
-Regras:
-- codigo pode ser numerico ou alfanumerico
-- codigo nao e a sequencia do item 0001, 0002, 0003
-- quantidade normalmente fica entre 1 e 99
-- quantidade pode repetir varias vezes
-- descricao sempre deve ser "ELEMENTO FILTRO"
-- nao invente dados
-- retorne somente JSON valido
-- nao use markdown
+Responda SOMENTE com JSON valido.
+Nao escreva explicacao.
+Nao use markdown.
+Nao use ```.
 
 Formato obrigatorio:
 {
   "itens": [
     {
-      "codigo": "CODIGO1 / CODIGO2",
+      "codigo": "CODIGO",
       "qtd": "1",
       "descricao": "ELEMENTO FILTRO"
     }
   ]
 }
+
+Regras:
+- Cada linha real da tabela vira 1 item.
+- Se tiver mais de um codigo na mesma linha, coloque na mesma celula separado por " / ".
+- Ignore cabecalho, cliente, data, endereco, valores e observacoes.
+- Codigo pode estar dentro da descricao.
+- Descricao sempre deve ser "ELEMENTO FILTRO".
+- Quantidade normalmente fica entre 1 e 99.
 """
 
     resposta = client.chat.completions.create(
@@ -332,12 +308,27 @@ Formato obrigatorio:
     if not conteudo:
         return []
 
+    print("RESPOSTA BRUTA VISAO:", conteudo, flush=True)
+
     conteudo = conteudo.strip()
     conteudo = conteudo.replace("```json", "")
     conteudo = conteudo.replace("```", "")
     conteudo = conteudo.strip()
 
-    dados = json.loads(conteudo)
+    inicio = conteudo.find("{")
+    fim = conteudo.rfind("}")
+
+    if inicio == -1 or fim == -1:
+        return []
+
+    conteudo_json = conteudo[inicio:fim + 1]
+
+    try:
+        dados = json.loads(conteudo_json)
+    except Exception as erro_json:
+        print("ERRO JSON:", erro_json, flush=True)
+        print("CONTEUDO JSON TENTADO:", conteudo_json, flush=True)
+        return []
 
     return limpar_itens(dados.get("itens", []))
 
