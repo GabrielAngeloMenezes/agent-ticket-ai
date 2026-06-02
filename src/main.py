@@ -128,14 +128,62 @@ def codigo_valido(codigo):
         return False
 
     if codigo in [
+        "0000", "00000", "20000",
         "0001", "0002", "0003", "0004", "0005",
         "0006", "0007", "0008", "0009", "0010",
-        "2026", "18775", "005922"
+        "2026", "18775", "005922", "8945",
+        "2760", "9926"
     ]:
+        return False
+
+    if codigo.startswith("-"):
+        return False
+
+    if codigo.endswith("-"):
+        return False
+
+    if codigo.isdigit() and len(codigo) < 5:
         return False
 
     return True
 
+
+def extrair_codigos_do_texto(texto):
+    texto = str(texto).upper()
+
+    encontrados = re.findall(
+        r"\b[A-Z]{1,4}\d{5,15}[A-Z0-9]*\b",
+        texto
+    )
+
+    codigos = []
+
+    for codigo in encontrados:
+        codigo = limpar_codigo(codigo)
+
+        if codigo_valido(codigo):
+            codigos.append(codigo)
+
+    return codigos
+
+    return True
+def extrair_codigos_do_texto(texto):
+    texto = str(texto).upper()
+
+    encontrados = re.findall(
+        r"\b[A-Z]{1,4}\d{5,15}[A-Z0-9]*\b",
+        texto
+    )
+
+    codigos = []
+
+    for codigo in encontrados:
+        codigo = limpar_codigo(codigo)
+
+        if codigo_valido(codigo):
+            codigos.append(codigo)
+
+    return codigos
 
 def limpar_itens(itens):
     itens_limpos = []
@@ -143,6 +191,7 @@ def limpar_itens(itens):
     for item in itens:
         codigo = str(item.get("codigo", "")).strip().upper()
         qtd = str(item.get("qtd", "1")).strip()
+        descricao_original = str(item.get("descricao", "")).strip().upper()
 
         codigo = codigo.replace(",", " / ")
         codigo = codigo.replace(";", " / ")
@@ -157,6 +206,12 @@ def limpar_itens(itens):
 
             if codigo_valido(parte):
                 codigos_validos.append(parte)
+
+        codigos_da_descricao = extrair_codigos_do_texto(descricao_original)
+
+        for codigo_desc in codigos_da_descricao:
+            if codigo_desc not in codigos_validos:
+                codigos_validos.append(codigo_desc)
 
         if not codigos_validos:
             continue
@@ -248,7 +303,7 @@ Formato obrigatorio:
 """
 
     resposta = client.chat.completions.create(
-        model="google/gemini-2.0-flash-exp:free",
+        model="google/gemini-2.0-flash-001",
         messages=[
             {
                 "role": "user",
@@ -412,6 +467,12 @@ def classificar_linha_cotacao(linha):
 
         if codigo_valido(token_limpo):
             codigos.append(token_limpo)
+
+    codigos_da_linha = extrair_codigos_do_texto(linha)
+
+    for codigo_desc in codigos_da_linha:
+        if codigo_desc not in codigos:
+            codigos.append(codigo_desc)
 
     if not codigos:
         return None
