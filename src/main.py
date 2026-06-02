@@ -631,14 +631,20 @@ def cotacao():
                 if extensao in [".jpg", ".jpeg", ".png", ".webp"]:
                     try:
                         itens = extrair_itens_com_visao(caminho_arquivo)
-                    except Exception as e:
-                        print("Erro na visao:", e)
+                    except Exception as erro_visao:
+                        print("Erro na visao:", erro_visao)
                         itens = []
 
-                texto_ocr = ler_texto_arquivo(caminho_arquivo)
+                texto_ocr = ""
 
-                if not itens:
-                    itens = extrair_itens_do_texto(texto_ocr)
+                try:
+                    texto_ocr = ler_texto_arquivo(caminho_arquivo)
+
+                    if not itens:
+                        itens = extrair_itens_do_texto(texto_ocr)
+
+                except Exception as erro_ocr:
+                    print("OCR ignorado:", erro_ocr)
 
                 print("=" * 50)
                 print("TEXTO OCR:")
