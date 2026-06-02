@@ -602,7 +602,8 @@ def home():
 @app.route("/cotacao", methods=["GET", "POST"])
 def cotacao():
 
-print("######### TESTE BYTE MASTER #########")
+    print("######### TESTE BYTE MASTER #########")
+
     if not usuario_logado():
         return redirect("/login")
 
